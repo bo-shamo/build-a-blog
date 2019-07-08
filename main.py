@@ -9,26 +9,41 @@ app.config['SQLALCHEMY_ECHO'] = True
 
 db = SQLAlchemy(app)
 
-class Movie(db.Model):
+class Task(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
-    watched = db.Column(db.Boolean)
-    rating = db.Column(db.String(10))
+    completed = db.Column(db.Boolean)
     
-    # TODO: add a ratings column to the Movie table
-
     def __init__(self, name):
         self.name = name
-        self.watched = False
-
-    def __repr__(self):
-        return '<Movie %r>' % self.name
+        self.completed = False
 
 
-@app.route("/")
+
+@app.route('/' , methods=['POST','GET'])
 def index():
-    encoded_error = request.args.get("error")
-    return render_template('edit.html', watchlist=get_current_watchlist(), error=encoded_error and cgi.escape(encoded_error, quote=True))
 
-if __name__ == "__main__":
+    if request.method == 'POST':
+        task_name = request.form['task']
+        new_task = Task(task_name)
+        db.session.add(new_task)
+        db.session.commit()
+        
+    tasks = Task.query.filter_by(completed=False).all() 
+    tasks_completed = Task.query.filter_by(completed=True).all()   
+    return render_template('todos.html',title = "Get It Done", tasks = tasks,tasks_completed = tasks_completed)
+
+@app.route('/delete-task', methods=['POST'])
+def delete_task():
+    task_id = int(request.form['task-id'])
+    task = Task.query.get(task_id)
+    task.completed = True
+    db.session.add(task)
+    db.session.commit()
+
+    return redirect('/')
+
+
+if __name__ == '__main__':
     app.run()
