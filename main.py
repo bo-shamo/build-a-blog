@@ -9,40 +9,58 @@ app.config['SQLALCHEMY_ECHO'] = True
 
 db = SQLAlchemy(app)
 
-class Task(db.Model):
+class Blog(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120))
-    completed = db.Column(db.Boolean)
+    title = db.Column(db.String(120))
+    body = db.Column(db.String(512))
+    deleted = db.Column(db.Boolean)
     
-    def __init__(self, name):
-        self.name = name
-        self.completed = False
+    def __init__(self):
+        self.deleted = False
 
 
 
-@app.route('/' , methods=['POST','GET'])
+@app.route('/blog' , methods=['GET'])
+@app.route('/', methods=['GET'])
 def index():
 
-    if request.method == 'POST':
-        task_name = request.form['task']
-        new_task = Task(task_name)
-        db.session.add(new_task)
-        db.session.commit()
-        
-    tasks = Task.query.filter_by(completed=False).all() 
-    tasks_completed = Task.query.filter_by(completed=True).all()   
-    return render_template('todos.html',title = "Get It Done", tasks = tasks,tasks_completed = tasks_completed)
+    posts = Blog.query.filter_by(deleted=False).all()    
+    return render_template('blog.html', blog = posts)
 
-@app.route('/delete-task', methods=['POST'])
-def delete_task():
-    task_id = int(request.form['task-id'])
-    task = Task.query.get(task_id)
-    task.completed = True
-    db.session.add(task)
+@app.route('/newpost')
+def add_blog():
+    new_blog = Blog()
+    db.session.add(new_blog)
     db.session.commit()
 
-    return redirect('/')
+    return render_template("newpost.html", blog = new_blog)
+
+@app.route('/addblog', methods=['POST'])
+def confirm_add_blog():
+    blog_id = int(request.form['blog-id'])
+    blog = Blog.query.get(blog_id)
+    blog.title = request.form['title']
+    blog.body = request.form['body']
+    error = ""
+    #error handling if any of the boxes are empty
+    if blog.title == "":
+        error = "Please add a title"
+    elif blog.body == "":
+        error = "Please add a body"
+
+    if error != "":
+        return render_template("newpost.html", blog=blog, error = error)
+    else:
+        db.session.add(blog)
+        db.session.commit()
+        return redirect('/blog')
+
+@app.route('/ind-blog')
+def individual_blog():
+    blog_id = request.args.get('id')
+    blog = Blog.query.get(blog_id)
+    return render_template("ind-blog.html", blog = blog)
 
 
 if __name__ == '__main__':

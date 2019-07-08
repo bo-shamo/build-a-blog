@@ -1,0 +1,18 @@
+{%extends "base.html"%}
+
+{%block content%}
+
+  <form action="/addblog" method="POST">
+    <input type="hidden" name="blog-id" value="{{blog.id}}"/>
+    <label>Title:
+      <input type="text" name="title"/>
+    </label>
+    <label>Body:
+      <textarea name="body"></textarea>
+    </label>
+    <input type="submit" value= "Finished?"/>
+  </form>
+  <h4 class="error">{{error}}</h4>
+
+
+{%endblock%}
